@@ -1,12 +1,12 @@
 # NebulaOS
 
-NebulaOS is a lightweight, single-page browser desktop built with vanilla HTML, CSS, and JavaScript. It includes a draggable window manager, an always-ready notepad, a simulated filesystem terminal, and a small media gallery to showcase how an operating-system style workspace can be recreated for the web.
+NebulaOS is a lightweight, single-page browser desktop built with vanilla HTML, CSS, and JavaScript. It includes a draggable window manager, persistent notes, a faux terminal, and a small media gallery to showcase how an operating-system style workspace can be recreated for the web.
 
 ## Features
 - **Window management** – open multiple app windows, drag them around, and focus with a click.
-- **Autosaving notepad** – type freely in a dedicated editor with quick save/clear controls and persistence across refreshes.
+- **Persistent notes** – create, edit, and delete notes stored in `localStorage` so they remain after refreshes.
 - **Productivity tools** – a task board for quick todos and a mini media gallery with interactive cards.
-- **Filesystem terminal** – explore a mock directory tree with commands such as `ls`, `cd`, `mkdir`, `touch`, `write`, `cat`, `tree`, and `reset`.
+- **In-browser terminal** – run simple commands (`help`, `time`, `echo`, `clear`) with keyboard shortcuts.
 - **Notifications** – actions like saving notes or completing tasks surface contextual toasts in the top bar.
 
 ## Development

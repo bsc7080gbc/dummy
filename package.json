@@ -1,0 +1,12 @@
+{
+  "name": "nebulaos",
+  "version": "0.4.0",
+  "description": "Browser-based desktop simulation with headless runner",
+  "type": "module",
+  "scripts": {
+    "simulate": "node simulate.js"
+  },
+  "dependencies": {
+    "jsdom": "^23.0.1"
+  }
+}

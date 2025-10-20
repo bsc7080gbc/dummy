@@ -202,7 +202,6 @@ const applications = {
     },
   },
 };
-
 function buildNotesToolbar() {
   const toolbar = document.createElement("div");
   toolbar.className = "note-toolbar";
@@ -418,7 +417,6 @@ function createTerminal() {
 
   const history = [];
   let historyIndex = -1;
-
   const commands = {
     help: () => "Commands: help, time, echo <text>, clear",
     time: () => new Date().toLocaleString(),

@@ -14,6 +14,7 @@ NebulaOS is a lightweight, single-page browser desktop built with vanilla HTML, 
 2. Edit styles in `styles.css` and behavior in `os.js`.
 3. To reset persistent data (notes, tasks), clear the browser's local storage for the domain.
 
+
 ## Keyboard Shortcuts
 - <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>N</kbd> – Open Notes
 - <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>T</kbd> – Open Terminal

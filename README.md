@@ -12,8 +12,16 @@ NebulaOS is a lightweight, single-page browser desktop built with vanilla HTML, 
 ## Development
 1. Open `index.html` in a modern browser – no build tools required.
 2. Edit styles in `styles.css` and behavior in `os.js`.
-3. To reset persistent data (notes, tasks), clear the browser's local storage for the domain.
+3. To reset persistent data (notepad, tasks, filesystem), clear the browser's local storage for the domain.
 
+## Headless simulation
+
+If you are working in an environment without a graphical browser, you can still exercise the desktop logic using the bundled headless runner:
+
+1. Install dependencies – `npm install`.
+2. Execute the simulation – `npm run simulate`.
+
+The script boots NebulaOS inside JSDOM, opens the Notes, Terminal, and Gallery apps, runs a few sample terminal commands, and prints the resulting state to the console.
 
 ## Keyboard Shortcuts
 - <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>N</kbd> – Open Notes

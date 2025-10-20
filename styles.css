@@ -162,8 +162,7 @@ body {
   flex: 1;
   padding: 1rem;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 1rem;
 }
 
@@ -171,78 +170,74 @@ body {
   display: none;
 }
 
-.notepad {
+.note-toolbar {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   gap: 0.75rem;
-  height: 100%;
+  align-items: center;
 }
 
-.notepad-toolbar {
+.note-add {
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.note-list {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: rgba(30, 41, 59, 0.78);
+}
+
+.note-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(30, 41, 59, 0.8);
   border-radius: 14px;
   border: 1px solid rgba(148, 163, 184, 0.14);
 }
 
-.notepad-heading {
-  font-weight: 600;
-  letter-spacing: 0.01em;
+.note-title,
+.note-body {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 10px;
+  padding: 0.6rem;
 }
 
-.notepad-status {
-  font-size: 0.85rem;
+.note-title:focus,
+.note-body:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.note-body {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.note-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
-.notepad-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.notepad-actions button {
+.note-delete {
   border: none;
   border-radius: 999px;
-  padding: 0.45rem 1rem;
-  font-weight: 600;
-  color: white;
+  padding: 0.35rem 0.75rem;
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
   cursor: pointer;
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.8), rgba(59, 130, 246, 0.8));
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.notepad-actions button:last-child {
-  background: rgba(239, 68, 68, 0.25);
-  color: #fecaca;
-}
-
-.notepad-actions button:hover,
-.notepad-actions button:focus-visible {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.35);
-  outline: none;
-}
-
-.notepad-editor {
-  flex: 1;
-  width: 100%;
-  background: rgba(15, 23, 42, 0.82);
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  border-radius: 16px;
-  padding: 1rem;
-  color: inherit;
-  font: 1rem/1.6 var(--font-sans);
-  resize: vertical;
-  min-height: 240px;
-}
-
-.notepad-editor:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
 }
 
 .task-column {
@@ -317,7 +312,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  flex: 1;
 }
 
 .terminal-output {
@@ -326,11 +320,8 @@ body {
   border: 1px solid rgba(148, 163, 184, 0.16);
   padding: 0.75rem;
   min-height: 160px;
-  flex: 1;
   font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo,
     Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  white-space: pre-wrap;
-  overflow-y: auto;
 }
 
 .terminal-form {

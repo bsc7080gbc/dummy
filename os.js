@@ -1,14 +1,14 @@
 const workspace = document.getElementById("workspace");
 const windowTemplate = document.getElementById("window-template");
+const noteTemplate = document.getElementById("note-template");
 const toastTemplate = document.getElementById("toast-template");
 const dockButtons = document.querySelectorAll(".dock-item");
 const notificationBadge = document.getElementById("status-notification");
 const clockBadge = document.getElementById("status-clock");
 
 const STORAGE_KEYS = {
-  notepad: "nebula_notepad",
+  notes: "nebula_notes",
   tasks: "nebula_tasks",
-  filesystem: "nebula_filesystem",
 };
 
 const shortcuts = {
@@ -168,10 +168,14 @@ class WindowManager {
 
 const applications = {
   notes: {
-    name: "Notepad",
+    name: "Notes",
     render(container) {
       container.innerHTML = "";
-      container.appendChild(createNotepad());
+      container.appendChild(buildNotesToolbar());
+      const list = document.createElement("div");
+      list.className = "note-list";
+      container.appendChild(list);
+      loadNotes(list);
     },
   },
   tasks: {
@@ -198,97 +202,90 @@ const applications = {
     },
   },
 };
-
-function createNotepad() {
-  const container = document.createElement("div");
-  container.className = "notepad";
-
+function buildNotesToolbar() {
   const toolbar = document.createElement("div");
-  toolbar.className = "notepad-toolbar";
+  toolbar.className = "note-toolbar";
 
-  const title = document.createElement("span");
-  title.className = "notepad-heading";
-  title.textContent = "Notepad";
+  const count = document.createElement("span");
+  count.id = "note-count";
+  count.textContent = "0 notes";
 
-  const status = document.createElement("span");
-  status.className = "notepad-status";
-
-  const actions = document.createElement("div");
-  actions.className = "notepad-actions";
-
-  const saveButton = document.createElement("button");
-  saveButton.type = "button";
-  saveButton.textContent = "Save";
-
-  const clearButton = document.createElement("button");
-  clearButton.type = "button";
-  clearButton.textContent = "Clear";
-
-  actions.append(saveButton, clearButton);
-  toolbar.append(title, status, actions);
-
-  const editor = document.createElement("textarea");
-  editor.className = "notepad-editor";
-  editor.placeholder = "Start typing your notes...";
-
-  const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.notepad) || "null");
-  if (saved) {
-    editor.value = saved.content || "";
-    status.textContent = saved.updated
-      ? `Saved ${formatTimestamp(saved.updated)}`
-      : "Unsaved changes";
-  } else {
-    status.textContent = "Unsaved changes";
-  }
-
-  let saveTimeout;
-
-  const persist = () => {
-    clearTimeout(saveTimeout);
-    const payload = {
-      content: editor.value,
-      updated: new Date().toISOString(),
-    };
-    localStorage.setItem(STORAGE_KEYS.notepad, JSON.stringify(payload));
-    status.textContent = `Saved ${formatTimestamp(payload.updated)}`;
-  };
-
-  const queueSave = () => {
-    status.textContent = "Saving…";
-    clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-      persist();
-    }, 400);
-  };
-
-  editor.addEventListener("input", queueSave);
-  editor.addEventListener("blur", persist);
-
-  saveButton.addEventListener("click", () => {
-    persist();
-    toastCenter.show("Notepad saved");
+  const addButton = document.createElement("button");
+  addButton.textContent = "New note";
+  addButton.className = "note-add";
+  addButton.addEventListener("click", () => {
+    const list = document.querySelector(".note-list");
+    const note = createNote();
+    list.prepend(note.element);
+    note.title.focus();
+    persistNotes();
+    toastCenter.show("Created a note");
+    updateNoteCount();
   });
 
-  clearButton.addEventListener("click", () => {
-    editor.value = "";
-    persist();
-    toastCenter.show("Notepad cleared");
-  });
-
-  container.append(toolbar, editor);
-
-  setTimeout(() => {
-    editor.focus();
-    editor.setSelectionRange(editor.value.length, editor.value.length);
-  });
-
-  return container;
+  toolbar.append(count, addButton);
+  return toolbar;
 }
 
-function formatTimestamp(isoString) {
-  if (!isoString) return "just now";
-  const date = new Date(isoString);
-  return `at ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+function createNote(data = {}) {
+  const clone = noteTemplate.content.firstElementChild.cloneNode(true);
+  const title = clone.querySelector(".note-title");
+  const body = clone.querySelector(".note-body");
+  const updated = clone.querySelector(".note-updated");
+  const removeButton = clone.querySelector(".note-delete");
+
+  title.value = data.title ?? "";
+  body.value = data.body ?? "";
+  if (data.updated) {
+    updated.textContent = `Edited ${new Date(data.updated).toLocaleString()}`;
+    updated.dateTime = data.updated;
+  } else {
+    updated.textContent = "Just now";
+    updated.dateTime = new Date().toISOString();
+  }
+
+  const save = () => {
+    updated.textContent = `Edited ${new Date().toLocaleString()}`;
+    updated.dateTime = new Date().toISOString();
+    persistNotes();
+  };
+
+  title.addEventListener("input", save);
+  body.addEventListener("input", save);
+
+  removeButton.addEventListener("click", () => {
+    clone.remove();
+    persistNotes();
+    updateNoteCount();
+    toastCenter.show("Deleted a note");
+  });
+
+  return { element: clone, title, body };
+}
+
+function loadNotes(listContainer) {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.notes) || "[]");
+  saved.forEach((item) => {
+    const note = createNote(item);
+    listContainer.appendChild(note.element);
+  });
+  updateNoteCount();
+}
+
+function updateNoteCount() {
+  const count = document.getElementById("note-count");
+  if (!count) return;
+  const notes = document.querySelectorAll(".note-card");
+  count.textContent = `${notes.length} note${notes.length === 1 ? "" : "s"}`;
+}
+
+function persistNotes() {
+  const notes = [...document.querySelectorAll(".note-card")].map((card) => ({
+    title: card.querySelector(".note-title").value,
+    body: card.querySelector(".note-body").value,
+    updated: card.querySelector(".note-updated").dateTime,
+  }));
+  localStorage.setItem(STORAGE_KEYS.notes, JSON.stringify(notes));
 }
 
 function createTaskBoard() {
@@ -407,6 +404,7 @@ function createTerminal() {
   output.className = "terminal-output";
   output.setAttribute("role", "log");
   output.setAttribute("aria-live", "polite");
+  output.textContent = "Nebula shell v0.2\nType `help` to list commands.";
 
   const form = document.createElement("form");
   form.className = "terminal-form";
@@ -419,37 +417,14 @@ function createTerminal() {
 
   const history = [];
   let historyIndex = -1;
-
-  const filesystem = new VirtualFileSystem();
-  const banner = "Nebula shell v0.3\nType `help` to list commands.";
-  output.textContent = banner;
-
-  const prompt = () => `nebula:${filesystem.promptPath()}$`;
-
-  const appendOutput = (lines) => {
-    output.textContent += `\n${lines.join("\n")}`;
-    output.scrollTop = output.scrollHeight;
-  };
-
   const commands = {
-    help: () =>
-      "Commands: help, ls [path], pwd, cd [path], cat <file>, mkdir <dir>, touch <file>, write <file> <text>, tree [path], clear, reset",
-    ls: (args) => {
-      const items = filesystem.ls(args[0]);
-      return items.length ? items.join("  ") : "(empty)";
-    },
-    pwd: () => filesystem.pwd(),
-    cd: (args) => filesystem.cd(args[0]),
-    cat: (args) => filesystem.cat(args[0]),
-    mkdir: (args) => filesystem.mkdir(args[0]),
-    touch: (args) => filesystem.touch(args[0]),
-    write: (args) => filesystem.write(args[0], args.slice(1).join(" ")),
-    tree: (args) => filesystem.tree(args[0]),
+    help: () => "Commands: help, time, echo <text>, clear",
+    time: () => new Date().toLocaleString(),
+    echo: (args) => args.join(" ") || "",
     clear: () => {
-      output.textContent = banner;
+      output.textContent = "";
       return "";
     },
-    reset: () => filesystem.reset(),
   };
 
   form.addEventListener("submit", (event) => {
@@ -458,28 +433,19 @@ function createTerminal() {
     if (!value) return;
     history.unshift(value);
     historyIndex = -1;
-    input.value = "";
 
-    const [cmd, ...args] = value.split(/\s+/);
+    const [cmd, ...args] = value.split(" ");
     const command = commands[cmd];
 
-    let response;
-    if (!command) {
-      response = `Command not found: ${cmd}`;
+    const response = command ? command(args) : `Command not found: ${cmd}`;
+    if (cmd === "clear") {
+      output.textContent = "Nebula shell v0.2\nType `help` to list commands.";
     } else {
-      try {
-        response = command(args);
-      } catch (error) {
-        response = error.message;
-      }
+      output.textContent += `\n> ${value}\n${response}`;
     }
 
-    const lines = [`${prompt()} ${value}`];
-    if (response) {
-      lines.push(response);
-    }
-
-    appendOutput(lines);
+    input.value = "";
+    output.scrollTop = output.scrollHeight;
   });
 
   input.addEventListener("keydown", (event) => {
@@ -495,238 +461,9 @@ function createTerminal() {
     }
   });
 
-  setTimeout(() => input.focus(), 50);
-
   form.appendChild(input);
   container.append(output, form);
   return container;
-}
-
-class VirtualFileSystem {
-  constructor() {
-    const persisted = JSON.parse(
-      localStorage.getItem(STORAGE_KEYS.filesystem) || "null"
-    );
-    if (persisted?.root) {
-      this.root = persisted.root;
-      this.cwd = persisted.cwd || [];
-    } else {
-      this.root = this.createDefaultTree();
-      this.cwd = ["home", "visitor"];
-      this.persist();
-    }
-    this.home = ["home", "visitor"];
-  }
-
-  createDefaultTree() {
-    return {
-      type: "dir",
-      children: {
-        home: {
-          type: "dir",
-          children: {
-            visitor: {
-              type: "dir",
-              children: {
-                "readme.txt": {
-                  type: "file",
-                  content:
-                    "Welcome to NebulaOS!\nUse `help` to explore the simulated filesystem.",
-                },
-                projects: {
-                  type: "dir",
-                  children: {
-                    "nebula.txt": {
-                      type: "file",
-                      content: "NebulaOS v0.3 prototype running in browser mode.",
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        system: {
-          type: "dir",
-          children: {
-            "motd.txt": {
-              type: "file",
-              content: "All systems nominal.",
-            },
-          },
-        },
-      },
-    };
-  }
-
-  persist() {
-    localStorage.setItem(
-      STORAGE_KEYS.filesystem,
-      JSON.stringify({ root: this.root, cwd: this.cwd })
-    );
-  }
-
-  promptPath() {
-    return this.cwd.length ? `/${this.cwd.join("/")}` : "/";
-  }
-
-  pwd() {
-    return this.promptPath();
-  }
-
-  normalizePath(path = "") {
-    if (!path) {
-      return [...this.cwd];
-    }
-    const isAbsolute = path.startsWith("/");
-    const segments = isAbsolute ? [] : [...this.cwd];
-    path.split("/").forEach((segment) => {
-      if (!segment || segment === ".") return;
-      if (segment === "..") {
-        segments.pop();
-      } else {
-        segments.push(segment);
-      }
-    });
-    return segments;
-  }
-
-  getNode(segments) {
-    let current = this.root;
-    for (const segment of segments) {
-      if (current.type !== "dir") return null;
-      current = current.children?.[segment];
-      if (!current) return null;
-    }
-    return current;
-  }
-
-  ensureDirectory(node) {
-    if (!node) {
-      throw new Error("Parent directory does not exist");
-    }
-    if (node.type !== "dir") {
-      throw new Error("Not a directory");
-    }
-  }
-
-  ls(path) {
-    const targetSegments = this.normalizePath(path || ".");
-    const node = this.getNode(targetSegments);
-    if (!node) throw new Error("Path not found");
-    if (node.type === "file") {
-      return [targetSegments[targetSegments.length - 1] || "/"];
-    }
-    return Object.keys(node.children)
-      .sort()
-      .map((name) =>
-        node.children[name].type === "dir" ? `${name}/` : name
-      );
-  }
-
-  cd(path) {
-    const target = path ? this.normalizePath(path) : [...this.home];
-    const node = this.getNode(target);
-    if (!node) throw new Error("Directory not found");
-    if (node.type !== "dir") throw new Error("Not a directory");
-    this.cwd = target;
-    this.persist();
-    return this.pwd();
-  }
-
-  splitPath(path) {
-    const segments = this.normalizePath(path);
-    if (!segments.length) throw new Error("Cannot use root for this operation");
-    const name = segments.pop();
-    return { parentSegments: segments, name };
-  }
-
-  mkdir(path) {
-    if (!path) throw new Error("Usage: mkdir <dir>");
-    const { parentSegments, name } = this.splitPath(path);
-    const parent = this.getNode(parentSegments);
-    this.ensureDirectory(parent);
-    if (parent.children[name]) throw new Error("Path already exists");
-    parent.children[name] = { type: "dir", children: {} };
-    this.persist();
-    return `Created directory ${name}`;
-  }
-
-  touch(path) {
-    if (!path) throw new Error("Usage: touch <file>");
-    const { parentSegments, name } = this.splitPath(path);
-    const parent = this.getNode(parentSegments);
-    this.ensureDirectory(parent);
-    if (parent.children[name] && parent.children[name].type !== "file") {
-      throw new Error("Cannot overwrite directory");
-    }
-    parent.children[name] = parent.children[name] || {
-      type: "file",
-      content: "",
-    };
-    this.persist();
-    return `Touched ${name}`;
-  }
-
-  write(path, content) {
-    if (!path || !content) {
-      throw new Error("Usage: write <file> <text>");
-    }
-    const { parentSegments, name } = this.splitPath(path);
-    const parent = this.getNode(parentSegments);
-    this.ensureDirectory(parent);
-    if (parent.children[name] && parent.children[name].type !== "file") {
-      throw new Error("Cannot overwrite directory");
-    }
-    parent.children[name] = {
-      type: "file",
-      content,
-    };
-    this.persist();
-    return `Wrote to ${name}`;
-  }
-
-  cat(path) {
-    if (!path) throw new Error("Usage: cat <file>");
-    const segments = this.normalizePath(path);
-    const node = this.getNode(segments);
-    if (!node) throw new Error("File not found");
-    if (node.type !== "file") throw new Error("Not a file");
-    return node.content || "";
-  }
-
-  tree(path) {
-    const segments = this.normalizePath(path || ".");
-    const node = this.getNode(segments);
-    if (!node) throw new Error("Path not found");
-
-    const lines = [];
-    const label = segments.length ? segments[segments.length - 1] : "/";
-    const suffix = node.type === "dir" && label !== "/" ? "/" : "";
-    lines.push(`${label}${suffix}`);
-
-    const walk = (current, depth) => {
-      if (current.type !== "dir") return;
-      const indent = "  ".repeat(depth);
-      Object.keys(current.children)
-        .sort()
-        .forEach((name) => {
-          const child = current.children[name];
-          lines.push(`${indent}${name}${child.type === "dir" ? "/" : ""}`);
-          walk(child, depth + 1);
-        });
-    };
-
-    walk(node, 1);
-    return lines.join("\n");
-  }
-
-  reset() {
-    this.root = this.createDefaultTree();
-    this.cwd = [...this.home];
-    this.persist();
-    return "Filesystem reset";
-  }
 }
 
 function createGallery() {
@@ -782,10 +519,7 @@ tickClock();
 
 const manager = new WindowManager(workspace);
 
-// Surface a welcome message when returning with saved content
-const savedNotepad = JSON.parse(
-  localStorage.getItem(STORAGE_KEYS.notepad) || "null"
-);
-if (savedNotepad?.updated) {
-  notificationBadge.textContent = "Notepad restored";
+// preload notes to display count in dock interactions
+if (JSON.parse(localStorage.getItem(STORAGE_KEYS.notes) || "[]").length) {
+  notificationBadge.textContent = "Welcome back";
 }
